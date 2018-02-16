@@ -93,7 +93,7 @@ void execute(char** cmd)
 		if(!fork())
 		{
 			if (execvp(cmd[0],cmd)<0)
-				printf("\e[1;31mNo command : %s\e[1;36m\n",cmd[0]);
+				fprintf(stderr,"\e[1;31mNo command : %s\e[1;36m\n",cmd[0]);
 			exit(0);
 		}
 		// check if have concurrent
@@ -157,7 +157,6 @@ void main()
 							execute(batchcmd);
 						}
 					}
-					//printf("%s",raw_cmd);
 				}
 				wait(0);
 			}
