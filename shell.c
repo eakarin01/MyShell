@@ -15,7 +15,7 @@ void consumenewline()
 	while(c!='\n'){}
 }
 
-char** splitArg(char* cmd)
+char** splitToken(char* cmd)
 {
 	char **wsplit = (char**)malloc(strlen(cmd)*sizeof(char*));
 	char *word = (char*)malloc(strlen(cmd)*sizeof(char));
@@ -108,62 +108,65 @@ void execute(char** cmd)
 
 
 
-void main()
+void main(int argc,char *argv[])
 {
 	char *raw_cmd = (char*)malloc(MAX_COMMAND*sizeof(char));
 	char **cmd;
 	system("clear");
-	while(1)
+	//batch mode
+	if(argc>=2)
 	{
-		memset(raw_cmd,0,MAX_COMMAND);
-		printf("\e[1;33mshell>\e[1;37m");
-		scanf("%[^\n]",raw_cmd);
-		consumenewline();
-		int len = strlen(raw_cmd);
+		int fd;
+		if ((fd = open(argv[1], O_RDONLY)) < 0) { 
+			printf("\e[1;31m\n");
+			
+			perror(argv[1]); // open failed 
+			exit(1);
+		}
 		printf("\e[1;36m\n");
-		if (strlen(raw_cmd)!=0)
+		memset(raw_cmd,0,MAX_COMMAND);
+		read(fd,raw_cmd,MAX_COMMAND);
+		char *line;
+		char **batchcmd;
+		while( (line = strsep(&raw_cmd,"\n")) != NULL )
 		{
-			cmd = splitArg(raw_cmd);
-			/*int i=0;
-			while(cmd[i]!=0)
+			batchcmd = splitToken(line);
+			//ignore blank command
+			if (batchcmd[0][0]!=0)
 			{
-				printf("[%s]\n",cmd[i++]);
-			}*/
-			if(checkQuit(cmd))
-			{
-				/* exit program */
-				exit(0);
+				execute(batchcmd);
 			}
-			else if(!strcmp(cmd[0],"shell"))
+		}
+	}
+	//interactive mode
+	else
+	{
+		while(1)
+		{
+			memset(raw_cmd,0,MAX_COMMAND);
+			printf("\e[1;33mshell>\e[1;37m");
+			scanf("%[^\n]",raw_cmd);
+			consumenewline();
+			int len = strlen(raw_cmd);
+			printf("\e[1;36m\n");
+			if (strlen(raw_cmd)!=0)
 			{
-				// shell [batch file] 
-				if(!fork())
+				cmd = splitToken(raw_cmd);
+				/*int i=0;
+				while(cmd[i]!=0)
 				{
-					int fd;
-					if ((fd = open(cmd[1], O_RDONLY)) < 0) { 
-						perror(cmd[1]); // open failed 
-						exit(1);
-					    }
-					memset(raw_cmd,0,MAX_COMMAND);
-					read(fd,raw_cmd,MAX_COMMAND);
-					char *line;
-					char **batchcmd;
-					while( (line = strsep(&raw_cmd,"\n")) != NULL )
-					{
-						batchcmd = splitArg(line);
-						//ignore blank command
-						if (batchcmd[0][0]!=0)
-						{
-							execute(batchcmd);
-						}
-					}
+					printf("[%s]\n",cmd[i++]);
+				}*/
+				if(checkQuit(cmd))
+				{
+					/* exit program */
+					exit(0);
 				}
-				wait(0);
-			}
-			else
-			{
-				/* interactive mode */
-				execute(cmd);
+				else
+				{
+					/* interactive mode */
+					execute(cmd);
+				}
 			}
 		}
 	}
