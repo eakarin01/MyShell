@@ -20,7 +20,6 @@ char** splitToken(char* cmd)
 	char **wsplit = (char**)malloc(strlen(cmd)*sizeof(char*));
 	char *word = (char*)malloc(strlen(cmd)*sizeof(char));
 	int count=0;
-	//printf("%s[%d]\n",cmd,strlen(cmd));
 	//ignore starting with space
 	int j=0;
 	while(cmd[j]==' ')
@@ -42,7 +41,6 @@ char** splitToken(char* cmd)
 			}
 			word[k]='\0';
 			k=0;
-			//printf("%s\n",word);
 			tmp = (char*)malloc(strlen(cmd)*sizeof(char));
 			strcpy(tmp,word);
 			wsplit[count++]=tmp;
@@ -51,10 +49,6 @@ char** splitToken(char* cmd)
 		}
 	}
 	wsplit[count++] = 0;
-	/*for(int i=0;i<count;i++)
-	{
-		printf("%s\n",wsplit[i]);
-	}*/
 	return wsplit;
 }	
 
@@ -93,16 +87,17 @@ void execute(char** cmd)
 		if(!fork())
 		{
 			if (execvp(cmd[0],cmd)<0)
+				// error handle when no command
 				fprintf(stderr,"\e[1;31mNo command : %s\e[1;36m\n",cmd[0]);
 			exit(0);
 		}
+		// parent exec
 		// check if have concurrent
 		if (idx!=-1)
 		{
 			cmd=&cmd[idx+1];
 			execute(cmd);
 		}
-		// parent exec
 		wait(0);
 }
 
@@ -119,7 +114,7 @@ void main(int argc,char *argv[])
 		int fd;
 		if ((fd = open(argv[1], O_RDONLY)) < 0) { 
 			printf("\e[1;31m\n");
-			
+			// error handle when can't open file
 			perror(argv[1]); // open failed 
 			exit(1);
 		}
@@ -128,14 +123,13 @@ void main(int argc,char *argv[])
 		read(fd,raw_cmd,MAX_COMMAND);
 		char *line;
 		char **batchcmd;
+		// read each line
 		while( (line = strsep(&raw_cmd,"\n")) != NULL )
 		{
 			batchcmd = splitToken(line);
 			//ignore blank command
 			if (batchcmd[0][0]!=0)
-			{
 				execute(batchcmd);
-			}
 		}
 	}
 	//interactive mode
@@ -152,21 +146,12 @@ void main(int argc,char *argv[])
 			if (strlen(raw_cmd)!=0)
 			{
 				cmd = splitToken(raw_cmd);
-				/*int i=0;
-				while(cmd[i]!=0)
-				{
-					printf("[%s]\n",cmd[i++]);
-				}*/
 				if(checkQuit(cmd))
-				{
 					/* exit program */
 					exit(0);
-				}
 				else
-				{
 					/* interactive mode */
 					execute(cmd);
-				}
 			}
 		}
 	}
